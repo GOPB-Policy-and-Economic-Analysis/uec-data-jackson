@@ -349,7 +349,8 @@ ecin_dates <- str_replace(ecin_dates, " ", "-") # turn into date recognizable
 ecin_dates <- as.yearmon(str_sub(ecin_dates, end = -6)) # just retain year and month
 
 # only keep most recent Oct or Feb RAWG file (Richie)
-feb_oct_ecins <- ecin_dates[month(ecin_dates) == 2 | month(ecin_dates) == 10]
+feb_oct_ecins <- ecin_dates[as.integer(format(ecin_dates, "%m")) == 2 |
+                              as.integer(format(ecin_dates, "%m")) == 10]
 recent_ecin_date <- max(feb_oct_ecins)
 
 # format back into filepath-recognizable format
