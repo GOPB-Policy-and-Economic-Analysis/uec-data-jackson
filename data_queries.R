@@ -3,6 +3,8 @@
 # author: "Jackson Bolos"
 # date: "2024-01-23"
 
+app_folder_path <- "../Econ Council Forecast Info App"
+
 
 # NOTE: Some external sources (BEA, BLS, etc.) have more lag time in updating
 #       certain indicators, so it is best to run this shortly before the council
@@ -43,95 +45,6 @@ ur_two_year_estimate <- NA # forecast for in two years
 gdp_current_year_estimate <- 2.3 # for current/unfinished year - number in percent format
 gdp_next_year_estimate <- 1.8 # for next year
 gdp_two_year_estimate <- NA # forecast for in two years
-
-# UEC Forecasts -----------------------------------------------------------
-
-# SINCE THIS ISN'T AUTOMATED, GETTING DATA FORMATTED THE SAME WAY
-# AS THE FINAL uec_forecasts AT THE END OF THIS SECTION WILL SUFFICE
-
-# date of responses for forecast date in app (insert in "YYYY-MM-DD" format)
-uec_date <- as.Date("2023-12-01")
-saveRDS(uec_date, paste0(app_folder_path, "uec_date.rds"))
-
-uec_responses <- read_excel("december_uec_responses.xlsx")
-
-uec_responses %<>%
-  select(starts_with("Q"))
-
-colnames(uec_responses) <- uec_responses[1, ]
-
-uec_responses %<>%
-  slice(-c(1, 2))
-
-extra_text <- "US Economic Indicators:\r\n\r\nPoint - What is your best estimate for the following economic variables, to the nearest tenth of a percent?\r\n\r\nRange - Provide a range that you‚Äôre 80% confident will contain the actual value. - "
-
-colnames(uec_responses) <- c("US December 2023 Recession?", "UT December 2023 Recession?",
-                             "US Recession Probability", "UT Recession Probability",
-                             "2024 CPI Forecast", "2024 CPI Range", "2025 CPI Forecast", "2025 CPI Range",
-                             "2024 US UR Forecast", "2024 US UR Range", "2025 US UR Forecast", "2025 US UR Range",
-                             "2024 GDP Forecast", "2024 GDP Range", "2025 GDP Forecast", "2025 GDP Range",
-                             "2024 NPI Forecast", "2024 NPI Range", "2025 NPI Forecast", "2025 NPI Range",
-                             "2024 UT UR Forecast", "2024 UT UR Range", "2025 UT UR Forecast", "2025 UT UR Range",
-                             "2024 Emp Forecast", "2024 Emp Range", "2025 Emp Forecast", "2025 Emp Range",
-                             "2024 Annual Pay Forecast", "2024 Annual Pay Range", "2025 Annual Pay Forecast", "2025 Annual Pay Range",
-                             "2024 Taxable Sales Forecast", "2024 Taxable Sales Range", "2025 Taxable Sales Forecast", "2025 Taxable Sales Range",
-                             "2024 HPI Forecast", "2024 HPI Range", "2025 HPI Forecast", "2025 HPI Range",
-                             "2024 Population Forecast", "2024 Population Range", "2025 Population Forecast", "2025 Population Range")
-
-uec_responses %<>%
-  select(matches(".+"))
-
-
-# Summarize data
-uec_responses %<>% 
-  mutate(`US December 2023 Recession?` = ifelse(`US December 2023 Recession?` == "Yes", 1, 0)) %>%
-  mutate(`UT December 2023 Recession?` = ifelse(`UT December 2023 Recession?` == "Yes", 1, 0))
-
-
-# fix messed up values
-uec_responses$`2024 HPI Forecast`[6] <- -0.018
-uec_responses[] <- lapply(uec_responses, as.numeric)
-
-columns_to_fix <- colnames(uec_responses)[5:ncol(uec_responses)]
-uec_responses[6, columns_to_fix] <- uec_responses[6, columns_to_fix] * 100
-uec_responses[2, columns_to_fix] <- uec_responses[2, columns_to_fix] * 100
-
-
-# actual summarization
-uec_responses %<>%
-  summarize(across(contains("?"), ~mean(., na.rm = T)),
-            across(!contains("?"), ~median(., na.rm = T)))
-
-# indicators
-uec_dec23_forecasts <- uec_responses %>%
-  select(contains("Forecast")) %>%
-  pivot_longer(everything(), names_to = "indicator") %>%
-  mutate(value = value / 100)
-
-
-
-# March Forecasts
-uec_mar24_forecasts <- tibble(
-  indicator = uec_dec23_forecasts$indicator,
-  value = c(3, 2.5,
-            4, 4,
-            2.3, 2,
-            5.1, 5.1,
-            2.9, 3,
-            2, 1.8,
-            4, 3.6,
-            3.5, 3.7,
-            2, 2.3,
-            1.5, 1.5
-  ) / 100
-)
-
-# date of responses for forecast date in app (insert in "YYYY-MM-DD" format)
-uec_date <- as.Date("2024-03-01")
-saveRDS(uec_date, paste0(app_folder_path, "uec_date.rds"))
-
-# for consistent naming across all indicators
-uec_forecasts <- uec_mar24_forecasts
 
 # SETUP -------------------------------------------------------------------
 library(tidyverse)
@@ -263,6 +176,95 @@ forecast_backfill <- function(history_source, dataframe)
   
   return(dataframe)
 }
+
+# UEC Forecasts -----------------------------------------------------------
+
+# SINCE THIS ISN'T AUTOMATED, GETTING DATA FORMATTED THE SAME WAY
+# AS THE FINAL uec_forecasts AT THE END OF THIS SECTION WILL SUFFICE
+
+# date of responses for forecast date in app (insert in "YYYY-MM-DD" format)
+uec_date <- as.Date("2023-12-01")
+saveRDS(uec_date, paste0(app_folder_path, "uec_date.rds"))
+
+uec_responses <- read_excel("december_uec_responses.xlsx")
+
+uec_responses %<>%
+  select(starts_with("Q"))
+
+colnames(uec_responses) <- uec_responses[1, ]
+
+uec_responses %<>%
+  slice(-c(1, 2))
+
+extra_text <- "US Economic Indicators:\r\n\r\nPoint - What is your best estimate for the following economic variables, to the nearest tenth of a percent?\r\n\r\nRange - Provide a range that you‚Äôre 80% confident will contain the actual value. - "
+
+colnames(uec_responses) <- c("US December 2023 Recession?", "UT December 2023 Recession?",
+                             "US Recession Probability", "UT Recession Probability",
+                             "2024 CPI Forecast", "2024 CPI Range", "2025 CPI Forecast", "2025 CPI Range",
+                             "2024 US UR Forecast", "2024 US UR Range", "2025 US UR Forecast", "2025 US UR Range",
+                             "2024 GDP Forecast", "2024 GDP Range", "2025 GDP Forecast", "2025 GDP Range",
+                             "2024 NPI Forecast", "2024 NPI Range", "2025 NPI Forecast", "2025 NPI Range",
+                             "2024 UT UR Forecast", "2024 UT UR Range", "2025 UT UR Forecast", "2025 UT UR Range",
+                             "2024 Emp Forecast", "2024 Emp Range", "2025 Emp Forecast", "2025 Emp Range",
+                             "2024 Annual Pay Forecast", "2024 Annual Pay Range", "2025 Annual Pay Forecast", "2025 Annual Pay Range",
+                             "2024 Taxable Sales Forecast", "2024 Taxable Sales Range", "2025 Taxable Sales Forecast", "2025 Taxable Sales Range",
+                             "2024 HPI Forecast", "2024 HPI Range", "2025 HPI Forecast", "2025 HPI Range",
+                             "2024 Population Forecast", "2024 Population Range", "2025 Population Forecast", "2025 Population Range")
+
+uec_responses %<>%
+  select(matches(".+"))
+
+
+# Summarize data
+uec_responses %<>% 
+  mutate(`US December 2023 Recession?` = ifelse(`US December 2023 Recession?` == "Yes", 1, 0)) %>%
+  mutate(`UT December 2023 Recession?` = ifelse(`UT December 2023 Recession?` == "Yes", 1, 0))
+
+
+# fix messed up values
+uec_responses$`2024 HPI Forecast`[6] <- -0.018
+uec_responses[] <- lapply(uec_responses, as.numeric)
+
+columns_to_fix <- colnames(uec_responses)[5:ncol(uec_responses)]
+uec_responses[6, columns_to_fix] <- uec_responses[6, columns_to_fix] * 100
+uec_responses[2, columns_to_fix] <- uec_responses[2, columns_to_fix] * 100
+
+
+# actual summarization
+uec_responses %<>%
+  summarize(across(contains("?"), ~mean(., na.rm = T)),
+            across(!contains("?"), ~median(., na.rm = T)))
+
+# indicators
+uec_dec23_forecasts <- uec_responses %>%
+  select(contains("Forecast")) %>%
+  pivot_longer(everything(), names_to = "indicator") %>%
+  mutate(value = value / 100)
+
+
+
+# March Forecasts
+uec_mar24_forecasts <- tibble(
+  indicator = uec_dec23_forecasts$indicator,
+  value = c(3, 2.5,
+            4, 4,
+            2.3, 2,
+            5.1, 5.1,
+            2.9, 3,
+            2, 1.8,
+            4, 3.6,
+            3.5, 3.7,
+            2, 2.3,
+            1.5, 1.5
+  ) / 100
+)
+
+# date of responses for forecast date in app (insert in "YYYY-MM-DD" format)
+uec_date <- as.Date("2024-03-01")
+saveRDS(uec_date, paste0(app_folder_path, "uec_date.rds"))
+
+# for consistent naming across all indicators
+uec_forecasts <- uec_mar24_forecasts
 
 # * Source Time Scale Availability Key ------------------------------------
 # INDICATOR (Time Aggregation Scale for plot): source (details/scale availability)
