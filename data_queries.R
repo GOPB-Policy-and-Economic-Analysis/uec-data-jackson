@@ -3,7 +3,7 @@
 # author: "Jackson Bolos"
 # date: "2024-01-23"
 
-app_folder_path <- "../Econ Council Forecast Info App"
+app_folder_path <- "../Econ-Council-Forecast-Info-App/"
 
 
 # NOTE: Some external sources (BEA, BLS, etc.) have more lag time in updating
