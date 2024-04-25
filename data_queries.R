@@ -55,7 +55,6 @@ library(magrittr)
 library(ggplot2)
 library(gginnards)
 library(plotly)
-app_folder_path <- "C:/Users/ajbolos/RStudio/Economic Council Forecast Information/Econ Council Forecast Info App/"
 # library(devtools)
 # install_github("mikeasilva/blsAPI") # had to go through github because CRAN wasn't working
 library(blsAPI)
