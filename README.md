@@ -2,6 +2,7 @@ This project to be included in a sibling folder of the Application project, both
 data_queries.R should be run after the Application project exists in a sibling directory, and before the app.R is published, as this script is what populates data for the application.
 
 
+
 DASHBOARD IMPROVEMENTS:
 For emp, just use Moody's historical data altogether instead of consulting public data source (BLS).
 Moody's also uses FHFA for population history, so data could just be brought in from that altogether as well.
