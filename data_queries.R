@@ -18,7 +18,7 @@ app_folder_path <- "../uec-app-jackson/"
 
 
 # Gardner Institute Unofficial Population Estimate (%)
-include_gardner <- TRUE
+include_gardner <- FALSE # turn off for June 2024
 current_year_estimate <- 0.0165 # for current/unfinished year - number in decimal (0.01) format
 next_year_estimate <- 0.0164 # for next year
 two_year_estimate <- NA # forecast for in two years
@@ -2794,7 +2794,10 @@ gardner_pop_table <- gardner_pop %>%
   transmute(`Calendar Year` = Year,
             Change = percent(change, accuracy = 0.1))
 
-saveRDS(gardner_pop_table, paste0(app_folder_path, "pop/gardner_pop_table.rds"))
+if(include_gardner == TRUE){
+  saveRDS(gardner_pop_table, paste0(app_folder_path, "pop/gardner_pop_table.rds"))
+}
+
 
 # * Combine All Pop Data --------------------------------------------------
 all_pop <- rbind(pop_hist,
