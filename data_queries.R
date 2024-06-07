@@ -814,7 +814,8 @@ rawg_cpi <- rawg_ecin_file %>%
   filter(Date >= year & Date < year + 3) # filter by year
 
 # get date of forecast for descriptive timeframe in plot data
-rawg_date <- as.yearmon(substr(ecin_path, 44, nchar(ecin_path) - 5), format = "%Y %m")
+# rawg_date <- as.yearmon(substr(ecin_path, 44, nchar(ecin_path) - 5), format = "%Y %m") # dependent on HP file path
+rawg_date <- as.yearmon(substr(ecin_path, nchar(ecin_path) - 11, nchar(ecin_path) - 5), format = "%Y %m") # works on Mac
 rawg_month <- format(rawg_date, "%B") # just in case
 rawg_year <- format(rawg_date, "%Y") # just in case
 rawg_date_string <- paste("RAWG", rawg_date)
