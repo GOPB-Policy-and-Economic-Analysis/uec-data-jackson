@@ -3,7 +3,8 @@
 # author: "Jackson Bolos"
 # date: "2024-01-23"
 
-app_folder_path <- "../Econ-Council-Forecast-Info-App/"
+#app_folder_path <- "../Econ-Council-Forecast-Info-App/"
+app_folder_path <- "../uec-app-jackson/"
 
 
 # NOTE: Some external sources (BEA, BLS, etc.) have more lag time in updating
@@ -184,8 +185,7 @@ forecast_backfill <- function(history_source, dataframe)
 # date of responses for forecast date in app (insert in "YYYY-MM-DD" format)
 uec_date <- as.Date("2023-12-01")
 saveRDS(uec_date, paste0(app_folder_path, "uec_date.rds"))
-
-uec_responses <- read_excel("december_uec_responses.xlsx")
+uec_responses <- read_excel("uec-past-forecasts/2023_12_uec_responses.xlsx")
 
 uec_responses %<>%
   select(starts_with("Q"))
@@ -258,12 +258,15 @@ uec_mar24_forecasts <- tibble(
   ) / 100
 )
 
+### *** Future improvement: use chatGPT to translate Gardner PDF to spreadsheet, then automate data cleaning (no hard coding)
+
 # date of responses for forecast date in app (insert in "YYYY-MM-DD" format)
 uec_date <- as.Date("2024-03-01")
 saveRDS(uec_date, paste0(app_folder_path, "uec_date.rds"))
 
 # for consistent naming across all indicators
 uec_forecasts <- uec_mar24_forecasts
+
 
 # * Source Time Scale Availability Key ------------------------------------
 # INDICATOR (Time Aggregation Scale for plot): source (details/scale availability)
@@ -304,10 +307,11 @@ apiCommand <- paste("series?m=",utils::URLencode(mnemonic),"&freq=",freq,"&trans
 # * S&P Path Setup --------------------------------------------------------
 
 # initialize directory containing files
-s_p500_path <- "I:/Shared/dea/Forecasting/GlobalInsight/Data"
+# s_p500_path <- "I:/Shared/dea/Forecasting/GlobalInsight/Data" # I don't think this works on Mac....
+s_p500_path <- "/Volumes/DATA/Shared/dea/Forecasting/GlobalInsight/Data" # Mac version -- make sure you mount the network drive first
 
 # retrieve file names
-print("Sometimes getting S&P directory can take a while...")
+# print("Sometimes getting S&P directory can take a while...")
 SPG_path <- file.info(list.files(s_p500_path,
                                  full.names = T,
                                  pattern="xlsx"))
@@ -323,10 +327,11 @@ SPG_path <- rownames(SPG_path)[which.max(SPG_dates)]
 # * RAWG Path Setup -------------------------------------------------------
 
 # initialize directory containing files
-rawg_path <- "I:/Shared/dea/Forecasting/06Indicators"
+# rawg_path <- "I:/Shared/dea/Forecasting/06Indicators" # Jackson's HP shortcut
+rawg_path <- "/Volumes/DATA/Shared/dea/Forecasting/06Indicators" # this works for Mac -- make sure you mount the network drive first
 
 # retrieve names of all files (including both ecin and hist)
-print("Sometimes getting RAWG directory can take a while...")
+# print("Sometimes getting RAWG directory can take a while...")
 rawg_direc <- file.info(list.files(rawg_path, 
                                   full.names = T,
                                   pattern="xlsx")) %>%
@@ -603,15 +608,15 @@ last_FRED_date <- rec_indicators$Date[nrow(rec_indicators)]
 # determine if the last piece of historical data is a complete quarter
 # we can't know what a quarter's indicator is until it is over
 # catch quarterly-dated data overlapping on quarter
-if(as.yearqtr(last_FRED_date) == quarter)
-{
+if(as.yearqtr(last_FRED_date) == quarter){
   rec_indicators %<>% slice(-n())
 }
 
 
 
 # format indicators for plotting
-rec_indicators %<>%select(-Recession) %>%
+rec_indicators %<>%
+  select(-Recession) %>%
   pivot_longer(cols = !Date,
                names_to = "indicator",
                values_to = "value") %>%
@@ -2227,8 +2232,7 @@ monthly_links <- tax_page %>% html_elements(css = "#monthlybr-sales-tab a")
 # obtain all relevant link file names
 monthly_anchors <- NULL
 inside_quote_pattern <- '"([^"]*)"'
-for(link in monthly_links)
-{
+for(link in monthly_links){
   current_file <- stringr::str_extract(as.character(link), inside_quote_pattern)
   current_file <- substr(current_file, 2, nchar(current_file) - 1)
   monthly_anchors <- c(monthly_anchors, current_file)
@@ -2271,8 +2275,7 @@ annual_links <- tax_page %>% html_elements(css = "#annualbr-sales-tab a")
 # obtain all relevant link file names
 annual_anchors <- NULL
 inside_quote_pattern <- '"([^"]*)"'
-for(link in annual_links)
-{
+for(link in annual_links){
   current_file <- stringr::str_extract(as.character(link), inside_quote_pattern)
   current_file <- substr(current_file, 2, nchar(current_file) - 1)
   annual_anchors <- c(annual_anchors, current_file)
@@ -2438,23 +2441,26 @@ saveRDS(all_taxable_sales, paste0(app_folder_path, "sales/all_taxable_sales.rds"
 # UT HPI % CHANGE ---------------------------------------------------------
 
 # * FHFA HPI Actuals ------------------------------------------------------
-fhfa_page <- read_html("https://www.fhfa.gov/DataTools/Downloads/Pages/House-Price-Index-Datasets.aspx#qat")
+# fhfa_page <- read_html("https://www.fhfa.gov/DataTools/Downloads/Pages/House-Price-Index-Datasets.aspx#qat")
+# FHFA redid their website - use new link
+fhfa_page <- read_html("https://www.fhfa.gov/data/hpi/datasets?tab=quarterly-data")
 
 # get links with css
-hpi_page_links <- fhfa_page %>% html_elements(css = ".ms-rteTableOddCol-4 a")
+#hpi_page_links <- fhfa_page %>% html_elements(css = ".ms-rteTableOddCol-4 a")
+hpi_page_links <- fhfa_page %>% html_elements("a[href*='.csv']") # cast a wide net - all xls files on page
 
 # obtain all link file names
 hpi_anchors <- NULL
 inside_quote_pattern <- '"([^"]*)"'
-for(link in hpi_page_links)
-{
+for(link in hpi_page_links){
   current_file <- stringr::str_extract(as.character(link), inside_quote_pattern)
   current_file <- substr(current_file, 2, nchar(current_file) - 1)
   hpi_anchors <- c(hpi_anchors, current_file)
 }
 
 # get desired anchor/url
-hpi_url <- hpi_anchors[grep("HPI_AT_state.csv", hpi_anchors, ignore.case = TRUE)]
+# hpi_url <- hpi_anchors[grep("HPI_AT_state.csv", hpi_anchors, ignore.case = TRUE)]
+hpi_url <- hpi_anchors[grep("hpi_at_state.csv", hpi_anchors, ignore.case = TRUE)]
 
 # download csv
 download.file(url = paste0("https://www.fhfa.gov", hpi_url), destfile = "hpi_hist.csv", mode = "wb")
@@ -2658,8 +2664,7 @@ pop_page_links <- kem_page %>% html_nodes(xpath = "//article/*/h2//a")
 # obtain all link file names
 pop_anchors <- NULL
 inside_quote_pattern <- '"([^"]*)"'
-for(link in pop_page_links)
-{
+for(link in pop_page_links){
   current_file <- stringr::str_extract(as.character(link), inside_quote_pattern)
   current_file <- substr(current_file, 2, nchar(current_file) - 1)
   pop_anchors <- c(pop_anchors, current_file)
