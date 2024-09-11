@@ -212,94 +212,12 @@ forecast_backfill <- function(history_source, dataframe)
 
 # UEC Forecasts -----------------------------------------------------------
 
-# SINCE THIS ISN'T AUTOMATED, GETTING DATA FORMATTED THE SAME WAY
-# AS THE FINAL uec_forecasts AT THE END OF THIS SECTION WILL SUFFICE
-
-# date of responses for forecast date in app (insert in "YYYY-MM-DD" format)
-uec_date <- as.Date("2023-12-01")
-saveRDS(uec_date, paste0(app_folder_path, "uec_date.rds"))
-uec_responses <- read_excel("uec-past-forecasts/2023_12_uec_responses.xlsx")
-
-uec_responses %<>%
-  select(starts_with("Q"))
-
-colnames(uec_responses) <- uec_responses[1, ]
-
-uec_responses %<>%
-  slice(-c(1, 2))
-
-extra_text <- "US Economic Indicators:\r\n\r\nPoint - What is your best estimate for the following economic variables, to the nearest tenth of a percent?\r\n\r\nRange - Provide a range that you‚Äôre 80% confident will contain the actual value. - "
-
-colnames(uec_responses) <- c("US December 2023 Recession?", "UT December 2023 Recession?",
-                             "US Recession Probability", "UT Recession Probability",
-                             "2024 CPI Forecast", "2024 CPI Range", "2025 CPI Forecast", "2025 CPI Range",
-                             "2024 US UR Forecast", "2024 US UR Range", "2025 US UR Forecast", "2025 US UR Range",
-                             "2024 GDP Forecast", "2024 GDP Range", "2025 GDP Forecast", "2025 GDP Range",
-                             "2024 NPI Forecast", "2024 NPI Range", "2025 NPI Forecast", "2025 NPI Range",
-                             "2024 UT UR Forecast", "2024 UT UR Range", "2025 UT UR Forecast", "2025 UT UR Range",
-                             "2024 Emp Forecast", "2024 Emp Range", "2025 Emp Forecast", "2025 Emp Range",
-                             "2024 Annual Pay Forecast", "2024 Annual Pay Range", "2025 Annual Pay Forecast", "2025 Annual Pay Range",
-                             "2024 Taxable Sales Forecast", "2024 Taxable Sales Range", "2025 Taxable Sales Forecast", "2025 Taxable Sales Range",
-                             "2024 HPI Forecast", "2024 HPI Range", "2025 HPI Forecast", "2025 HPI Range",
-                             "2024 Population Forecast", "2024 Population Range", "2025 Population Forecast", "2025 Population Range")
-
-uec_responses %<>%
-  select(matches(".+"))
-
-
-# Summarize data
-uec_responses %<>%
-  mutate(`US December 2023 Recession?` = ifelse(`US December 2023 Recession?` == "Yes", 1, 0)) %>%
-  mutate(`UT December 2023 Recession?` = ifelse(`UT December 2023 Recession?` == "Yes", 1, 0))
-
-
-# fix messed up values
-uec_responses$`2024 HPI Forecast`[6] <- -0.018
-uec_responses[] <- lapply(uec_responses, as.numeric)
-
-columns_to_fix <- colnames(uec_responses)[5:ncol(uec_responses)]
-uec_responses[6, columns_to_fix] <- uec_responses[6, columns_to_fix] * 100
-uec_responses[2, columns_to_fix] <- uec_responses[2, columns_to_fix] * 100
-
-
-# actual summarization
-uec_responses %<>%
-  summarize(across(contains("?"), ~mean(., na.rm = T)),
-            across(!contains("?"), ~median(., na.rm = T)))
-
-# indicators
-uec_dec23_forecasts <- uec_responses %>%
-  select(contains("Forecast")) %>%
-  pivot_longer(everything(), names_to = "indicator") %>%
-  mutate(value = value / 100)
-
-
-
-# March Forecasts
-uec_mar24_forecasts <- tibble(
-  indicator = uec_dec23_forecasts$indicator,
-  value = c(3, 2.5,
-            4, 4,
-            2.3, 2,
-            5.1, 5.1,
-            2.9, 3,
-            2, 1.8,
-            4, 3.6,
-            3.5, 3.7,
-            2, 2.3,
-            1.5, 1.5
-  ) / 100
-)
-
-write_csv(uec_mar24_forecasts, "uec-past-forecasts/2024_03_cleaned_forecast_str.xlsx")
-
-
-## use ChatGPT to turn Utah Economic Council Forecast PDF on Gardner Website into a simple table
-# double check numbers (Chat isn't always 100% accurate) and save this into uec-past-forecasts folder
-
 ## ** MANUAL UPDATE HERE **
 
-# order from UEC forecast PDF
+## use ChatGPT to turn Utah Economic Council Forecast PDF on Gardner Website into a simple table
+# https://gardner.utah.edu/utah-economy/economic-indicators/utah-economic-council-forecast/
+
+# order from UEC forecast PDF (if needed)
 ind_names <- c(
   "U.S. CPI Inflation Rate",
   "U.S. Unemployment Rate",
@@ -313,15 +231,22 @@ ind_names <- c(
   "Utah Average Home Prices (% Change)"
 )
 
-ind_short <- c(
+# give this list to ChatGPT to attach to forecast names
+ind_short <- c( 
   "CPI", "US UR", "GDP", "NPI", "Population", "UT UR", "Emp", "Annual Pay", "Taxable Sales", "HPI"
 )
-# give ind_short to ChatGPT to create a key column alongside forecasts
 
-## June forecasts
-uec_data_table <- read_xlsx("uec-past-forecasts/2024_06_uec_forecasts.xlsx")
 
-## ** MANUAL UPDATE HERE **
+# double check numbers (Chat isn't always 100% accurate) and save this into uec-past-forecasts folder
+
+
+## latest month forecasts
+
+uec_month <- str_pad(month(month) - 3, 2, "left", "0")
+# uec_fcast_months <- c(3, 6, 9, 12) # double check it's one of these
+
+# get forecast table after cleaning with ChatGPT
+uec_data_table <- read_xlsx(paste0("uec-past-forecasts/", year, "_", uec_month, "_uec_forecasts.xlsx"))
 
 # clean table
 uec_forecasts <- uec_data_table %>% 
@@ -336,11 +261,13 @@ uec_forecasts %<>%
 
 
 # date of responses for forecast date in app (insert in "YYYY-MM-DD" format)
-uec_date <- as.Date("2024-06-01")
+uec_date <- as.Date(paste0(year,"-",uec_month,"-01"))
+
 saveRDS(uec_date, paste0(app_folder_path, "uec_date.rds"))
 
-# # for consistent naming across all indicators
-# uec_forecasts <- uec_mar24_forecasts
+# make sure final UEC forecast format is similar to this
+# check_uec_str <- read_csv("uec-past-forecasts/2024_03_cleaned_forecast_str.xlsx")
+
 
 
 # * Source Time Scale Availability Key ------------------------------------
